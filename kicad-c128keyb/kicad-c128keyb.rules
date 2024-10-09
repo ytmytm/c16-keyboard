@@ -10,8 +10,8 @@
     (vias on)
     (via_costs 2)
     (plane_via_costs 5)
-    (start_ripup_costs 100)
-    (start_pass_no 2948)
+    (start_ripup_costs 5)
+    (start_pass_no 1416)
     (layer_rule F.Cu
       (active on)
       (preferred_direction horizontal)
@@ -55,14 +55,12 @@
     "kicad_default" "Via[0-1]_800:400_um-kicad_default"
   )
   (class default
-    GND "unconnected-(J1-Pad2)" /~{RESTORE} VCC /PB3 /PB6 /PB5 /PB4
-    /PB7 /PB2 /PB1 /PB0 /PA0 /PA6 /PA5 /PA4
-    /PA3 /PA2 /PA1 /PA7 /K0 /K1 /K2 /40{slash}80
-    /CAPS "unconnected-(J1-Pad26)" "Net-(Q1-Pad2)" "Net-(Q2-Pad2)" "Net-(Q3-Pad2)" "/CAPS_3V" "/40{slash}80_3V" "/~{RESTORE_3V}"
-    "Net-(U1-Pad2)" /RESET "Net-(U1-Pad4)" "Net-(U1-Pad5)" "unconnected-(U1-Pad6)" "unconnected-(U1-Pad7)" "Net-(J1-Pad4)" "unconnected-(U1-Pad14)"
-    /STROBE "Net-(U1-Pad22)" "Net-(U1-Pad23)" "Net-(U1-Pad24)" "Net-(U1-Pad25)" "unconnected-(U1-Pad26)" /UNUSED "unconnected-(U1-Pad34)"
-    /DATA "unconnected-(U2-Pad9)" "/SH_CP" "/ST_CP" /DS +3V3 "unconnected-(J2-Pad2)" /SCL
-    /SDA
+    GND /~{RESTORE} VCC /PB3 /PB6 /PB5 /PB4 /PB7
+    /PB2 /PB1 /PB0 /PA0 /PA6 /PA5 /PA4 /PA3
+    /PA2 /PA1 /PA7 "Net-(Q1-Pad2)" "unconnected-(J5-Pad2)" "unconnected-(J5-Pad5)" "unconnected-(J5-Pad20)" /AX1
+    "/~{RESTORE_3V}" /RESET /STROBE /DATA "unconnected-(U2-Pad9)" "/SH_CP" "/ST_CP" /DS
+    +3V3 "unconnected-(J2-Pad2)" /SCL /SDA /AX2 /AY0 /AY1 /AY2
+    "unconnected-(U2-Pad6)" "unconnected-(U2-Pad7)" /AX0 "unconnected-(U3-Pad10)" "unconnected-(U3-Pad11)"
     (clearance_class default)
     (via_rule default)
     (rule
