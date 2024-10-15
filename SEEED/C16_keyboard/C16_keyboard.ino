@@ -7,7 +7,7 @@
   Copyright (c) 2022 Hartland PC LLC
   Written by Robert VanHazinga
 
-  Modified for C128 by Maciej 'YTM/Elysium' Witkowiak
+  Modified for C16 by Maciej 'YTM/Elysium' Witkowiak
 
 
     This program is free software: you can redistribute it and/or modify
@@ -25,7 +25,7 @@
 
 */
 
-#include "C128keyboard.h"
+#include "C16keyboard.h"
 
 
 #include <KeyboardController.h>

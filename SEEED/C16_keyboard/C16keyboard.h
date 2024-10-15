@@ -4,7 +4,7 @@
   Copyright (c) 2022 Hartland PC LLC
   Written by Robert VanHazinga
 
-  Modified for C128 by Maciej 'YTM/Elysium' Witkowiak
+  Modified for C16 by Maciej 'YTM/Elysium' Witkowiak
 
 
     This program is free software: you can redistribute it and/or modify
@@ -23,8 +23,8 @@
 */
 
 
-#ifndef C128keyboard_h
-#define C128keyboard_h
+#ifndef C16keyboard_h
+#define C16keyboard_h
 
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"

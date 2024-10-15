@@ -1,10 +1,10 @@
 /*
-  C128keyboard - Commodore Keyboard library
+  C16keyboard - Commodore Keyboard library
 
   Copyright (c) 2022 Hartland PC LLC
   Written by Robert VanHazinga
 
-  Modified for C128 by Maciej 'YTM/Elysium' Witkowiak
+  Modified for C16 by Maciej 'YTM/Elysium' Witkowiak
 
 
     This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 */
-#include "C128keyboard.h"
+#include "C16keyboard.h"
 
 // static keymap definitions, include only once
 #include "keymaps.h"

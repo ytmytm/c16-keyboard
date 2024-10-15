@@ -1,5 +1,5 @@
 
-//  C64/C128 key maps: symbolic and positional
+//  C16/64 key maps: symbolic and positional
 //
 //  Maciej 'YTM/Elysium' Witkowiak
 

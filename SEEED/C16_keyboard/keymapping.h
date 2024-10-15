@@ -17,7 +17,7 @@ https://sites.google.com/site/h2obsession/CBM/C128/keyboard-scan
 
 */
 
-//  Modified for C128 by Maciej 'YTM/Elysium' Witkowiak
+//  Modified for C16 by Maciej 'YTM/Elysium' Witkowiak
 
 // order of this table is so weird (if you look into C64/C128 keyboard matrix) because
 // of the way how original (PS/2) code had MTxxxx lines attached
