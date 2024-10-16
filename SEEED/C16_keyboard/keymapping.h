@@ -26,16 +26,16 @@ https://sites.google.com/site/h2obsession/CBM/C128/keyboard-scan
 // AX3 is used for logic table gap on MT8812/16 for X6/X7 and for C128 keys (lines X8/X9/X10)
 // anything above $00ff is a special modifier or action key
 
-enum C128_Key {
-   // C64 8x8 keymap
+enum C16_Key {
+   // C16 8x8 keymap
    KEY_DEL = 0x00           // 0 DEL
   ,KEY_F1 = 0x01            // 1 F1
-  ,KEY_HORZ_CSR = 0x02      // 2 HORZ CSR
-  ,KEY_F5 = 0x03            // 3 F5
+  ,KEY_POUND = 0x02         // 2 POUND
+  ,KEY_F3 = 0x03            // 3 F3
   ,KEY_RETURN = 0x04        // 4 RETURN
-  ,KEY_F3 = 0x05            // 5 F3
-  ,KEY_F7 = 0x06            // 6 F7
-  ,KEY_VERT_CSR = 0x07      // 7 VERT CSR
+  ,KEY_F2 = 0x05            // 5 F2
+  ,KEY_HELP = 0x06          // 6 HELP
+  ,KEY_AT = 0x07            // 7 @
   ,KEY_9 = 0x08             // 8 9
   ,KEY_M = 0x09             // 9 M
   ,KEY_J = 0x0A             // 10 J
@@ -52,13 +52,13 @@ enum C128_Key {
   ,KEY_F = 0x15             // 21 F
   ,KEY_6 = 0x16             // 22 6
   ,KEY_X = 0x17             // 23 X
-  ,KEY_POUND = 0x18         // 24 POUND
-  ,KEY_RSHIFT = 0x19        // 25 RSHIFT
+  ,KEY_CRSR_LEFT = 0x18     // 24 CURSOR LEFT
+  ,KEY_ESC = 0x19           // 25 ESC
   ,KEY_SEMICOLON = 0x1A     // 26 ;
-  ,KEY_ARR_UP = 0x1B        // 27 ^
+  ,KEY_PLUS = 0x1B          // 27 +
   ,KEY_STAR = 0x1C          // 28 *
   ,KEY_EQUALS = 0x1D        // 29 =
-  ,KEY_HOME = 0x1E          // 30 HOME
+  ,KEY_CRSR_RIGHT = 0x1E    // 29 CURSOR RIGHT
   ,KEY_SLASH = 0x1F         // 31 /
   ,KEY_3 = 0x20             // 32 3
   ,KEY_Z = 0x21             // 33 Z
@@ -68,13 +68,15 @@ enum C128_Key {
   ,KEY_S = 0x25             // 37 S
   ,KEY_4 = 0x26             // 38 4
   ,KEY_LSHIFT = 0x27        // 39 LSHIFT
-  ,KEY_PLUS = 0x28          // 40 +
+  ,KEY_CRSR_DOWN = 0x28     // 40 CURSOR DOWN
+//  ,KEY_COMMA = 0x29         // 41 ,
   ,KEY_DOT = 0x29           // 41 .
   ,KEY_L = 0x2A             // 42 L
-  ,KEY_AT = 0x2B            // 43 @
+  ,KEY_MINUS = 0x2B         // 43 -
   ,KEY_P = 0x2C             // 44 P
   ,KEY_COLON = 0x2D         // 45 :
-  ,KEY_MINUS = 0x2E         // 46 -
+  ,KEY_CRSR_UP = 0x2E       // 46 CURSOR UP
+//  ,KEY_DOT = 0x2F           // 47 .
   ,KEY_COMMA = 0x2F         // 47 ,
   ,KEY_7 = 0x30             // 48 7
   ,KEY_B = 0x31             // 49 B
@@ -88,70 +90,17 @@ enum C128_Key {
   ,KEY_SPACE = 0x39         // 57 SPACE
   ,KEY_CTRL = 0x3A          // 58 CTRL
   ,KEY_Q = 0x3B             // 59 Q
-  ,KEY_ARR_LEFT = 0x3C      // 60 <-
+  ,KEY_CLR = 0x3C           // 60 CLR
   ,KEY_CBM = 0x3D           // 61 CBM
   ,KEY_2 = 0x3E             // 62 2
   ,KEY_RUN_STOP = 0x3F      // 63 RUN/STOP
-  // C128 extended keyboard (X8/X9/X10, AX3=1 always)
-  ,C128_KEY_HELP = 0x50     // 80 HELP
-  ,C128_KEYPAD_2 = 0x51     // 81 keypad 2
-  ,C128_KEYPAD_5 = 0x52     // 82 keypad 5
-  ,C128_KEYPAD_7 = 0x53     // 83 keypad 7
-  ,C128_KEYPAD_8 = 0x54     // 84 keypad 8
-  ,C128_KEYPAD_4 = 0x55     // 85 keypad 4
-  ,C128_KEY_TAB = 0x56      // 86 TAB
-  ,C128_KEYPAD_1 = 0x57     // 87 keypad 1
-  ,C128_KEY_ESC = 0x70      // 112 ESC
-  ,C128_KEYPAD_ENTER = 0x71 // 113 keypad ENTER
-  ,C128_KEYPAD_MINUS = 0x72 // 114 keypad -
-  ,C128_KEYPAD_9 = 0x73     // 115 keypad 9
-  ,C128_KEYPAD_PLUS = 0x74  // 116 keypad +
-  ,C128_KEYPAD_6 = 0x75     // 117 keypad 6
-  ,C128_KEY_LINEFEED = 0x76 // 118 LINE FEED
-  ,C128_KEYPAD_3 = 0x77     // 119 keypad 3
-  ,C128_KEY_ALT = 0x48      // 72 ALT
-  ,C128_KEY_DOWN = 0x49     // 73 cursor DOWN
-  ,C128_KEYPAD_DOT = 0x4a   // 74 keypad .
-  ,C128_KEY_RIGHT = 0x4b    // 75 cursor RIGHT
-  ,C128_KEYPAD_0 = 0x4c     // 76 keypad 0
-  ,C128_KEY_LEFT = 0x4d     // 77 cursor LEFT
-  ,C128_KEY_UP = 0x4e       // 78 cursor UP
-  ,C128_KEY_NOSCROLL = 0x4f // 79 NO SCROLL
-  // joystick #1, if X11 line connected to GND
-  ,JOY1_UP = 0x68           // 104 joystick 1 UP
-  ,JOY1_DOWN = 0x6c         // 108 joystick 1 DOWN
-  ,JOY1_LEFT = 0x6a         // 106 joystick 1 LEFT
-  ,JOY1_RIGHT = 0x6e        // 110 joystick 1 RIGHT
-  ,JOY1_FIRE = 0x69         // 105 joystick 1 FIRE
-//  ,JOY2_ROUTE_GND = 0x6f    // 111 route GND from X11 to Y7 so that joystick 2 can be mapped as shorts between X0-4 and Y7
-  ,JOY2_ROUTE_GND = 0x6b    // 107 route GND from X11 to Y6 so that joystick 2 can be mapped as shorts between X0-4 and Y6
-  // joystick #2, if Y7 is connected to GND (through X11 via JOY2_ROUTE_GND), add MOD_JOY2 to all these codes in handler routine
-  /*
-  ,JOY2_UP = 0x07           // X=0, Y=7 -> X11=GND
-  ,JOY2_DOWN = 0x27         // X=1, Y=7 -> X11=GND
-  ,JOY2_LEFT = 0x17         // X=2, Y=7 -> X11=GND
-  ,JOY2_RIGHT = 0x37        // X=3, Y=7 -> X11=GND
-  ,JOY2_FIRE = 0x0f         // X=4, Y=7 -> X11=GND
-  */
-  // joystick #2, if Y6 is connected to GND (through X11 via JOY2_ROUTE_GND), add MOD_JOY2 to all these codes in handler routine
-  ,JOY2_UP = 0x03           // X=0, Y=6 -> X11=GND
-  ,JOY2_DOWN = 0x23         // X=1, Y=6 -> X11=GND
-  ,JOY2_LEFT = 0x13         // X=2, Y=6 -> X11=GND
-  ,JOY2_RIGHT = 0x33        // X=3, Y=6 -> X11=GND
-  ,JOY2_FIRE = 0x0b         // X=4, Y=6 -> X11=GND
 
   // modifiers
   ,MOD_SHIFT = 0x100        // virtual shift modifier (add shift on base map, remove shift on shifted map) (this is used as a bit modifier)
-  ,MOD_JOY2 = 0x200         // switch JOY2_ROUTE_GND to connect Y7 to X11(GND) so that connections X0-4 to Y7 act as joystick #2
   // special actions
-  ,KEY_RESTORE = 0x400      // special action: RESTORE (NMI)
   ,KEY_KEYMAP = 0x401       // special action: switch to next keymap
   ,KEY_MT_RESET = 0x402     // special action: reset MT88XX chip
   ,KEY_SHIFT_LOCK = 0x403   // special action: shift lock (left shift toggle)
-  ,C128_40_80_KEY = 0x404   // special action: C128 40/80 key (toggle)
-  ,C128_CAPS_KEY = 0x405    // special action: C128 CAPS/DIN key (toggle)
-  ,KEY_JOY1_MODE = 0x406    // special action: toggle joystick #1 mode on numpad + right control
-  ,KEY_JOY2_MODE = 0x407    // special action: toggle joystick #2 mode on numpad + right control
   //
   ,IGNORE_KEYCODE = 0xFFF   // special: ignore keycode
 };
