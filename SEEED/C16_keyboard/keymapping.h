@@ -69,14 +69,12 @@ enum C16_Key {
   ,KEY_4 = 0x26             // 38 4
   ,KEY_LSHIFT = 0x27        // 39 LSHIFT
   ,KEY_CRSR_DOWN = 0x28     // 40 CURSOR DOWN
-//  ,KEY_COMMA = 0x29         // 41 ,
   ,KEY_DOT = 0x29           // 41 .
   ,KEY_L = 0x2A             // 42 L
   ,KEY_MINUS = 0x2B         // 43 -
   ,KEY_P = 0x2C             // 44 P
   ,KEY_COLON = 0x2D         // 45 :
   ,KEY_CRSR_UP = 0x2E       // 46 CURSOR UP
-//  ,KEY_DOT = 0x2F           // 47 .
   ,KEY_COMMA = 0x2F         // 47 ,
   ,KEY_7 = 0x30             // 48 7
   ,KEY_B = 0x31             // 49 B
