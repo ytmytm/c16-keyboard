@@ -1,5 +1,5 @@
 
-//  C16/64 key maps: symbolic and positional
+//  C16 key maps: symbolic and positional
 //
 //  Maciej 'YTM/Elysium' Witkowiak
 
@@ -216,7 +216,7 @@ constexpr static C64Key C16_sym_keys[] = {
   ,{ 0xc0, KEY_E,          KEY_E }            // Keypad E
   ,{ 0xc1, KEY_F,          KEY_F }            // Keypad F
 
-  ,{ 0xc3, IGNORE_KEYCODE,     IGNORE_KEYCODE }       // Keypad ^ XXX arrow up
+  ,{ 0xc3, KEY_ZERO | MOD_SHIFT, KEY_ZERO }   // Keypad ^
   ,{ 0xc4, KEY_5 | MOD_SHIFT, KEY_5 }         // Keypad %
   ,{ 0xc5, KEY_COMMA | MOD_SHIFT, KEY_COMMA } // Keypad <
   ,{ 0xc6, KEY_DOT | MOD_SHIFT, KEY_DOT }     // Keypad >
