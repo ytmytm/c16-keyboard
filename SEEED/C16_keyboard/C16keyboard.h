@@ -57,14 +57,6 @@
 const uint8_t ANALOG_SH_ARRAY[] = { ANALOG_SH_AY2, ANALOG_SH_AY1, ANALOG_SH_AY0, ANALOG_SH_AX2, ANALOG_SH_AX1, ANALOG_SH_AX0 }; // ANALOG_SH_AX3 would be next, but is handled separately
 // last, 7th bit unused
 
-// these can't be driven directly, they need to go through transistors for open collector functionality (or 74'xx equivalent chip)
-// C128 NMI setup
-#define NMI_PIN           8
-// C128 40/80
-#define C128_40_80_PIN    9
-// C128 CAPS
-#define C128_CAPS_PIN     10
-
 // C64/128 key codes / USB key codes defines
 #include "keymapping.h"
 
@@ -80,9 +72,9 @@ class C64KeyInfo {
     const char *m_name;
 };
 
-class C128keyboard {
+class C16keyboard {
   public:
-    C128keyboard();
+    C16keyboard();
     void c64key(uint16_t c, bool kpress);
     uint16_t mapkeycode(uint8_t kc, uint8_t mod);
     void clearAllKeys(void);

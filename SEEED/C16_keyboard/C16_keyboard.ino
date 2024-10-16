@@ -38,15 +38,13 @@ USBHost usb;
 KeyboardController keyboard(usb);
 
 
-C128keyboard *ckey;
+C16keyboard *ckey;
 static volatile uint8_t kc, mod, modbuff;
 static volatile uint16_t kc_mapped;
 static volatile uint8_t keymapnum = 0; // current keymap number
 
-static volatile bool joymode=false;
-static volatile uint8_t joynum=2, joykeycount=0;
-static volatile bool kpress=false, c128_4080 = false, c128_caps = false;
-static volatile bool lshift=false, rshift=false, shiftlock=false, virtshift=false; // 4 shift states: left, right, lock(left), virtual (from mapping)
+static volatile bool kpress=false;
+static volatile bool lshift=false, shiftlock=false, virtshift=false; // shift states: left, lock(left), virtual (from mapping)
 
 static volatile unsigned long lastPressedMillis = 0, currentMillis = 0;
 constexpr const unsigned long inactivePeriodMillis = 5000; // keep the message on OLED for 5 seconds after a keypress
@@ -65,36 +63,6 @@ constexpr const unsigned long inactivePeriodMillis = 5000; // keep the message o
 U8G2_SSD1306_128X32_UNIVISION_1_HW_I2C u8g2(U8G2_R0);
 
 //////////////////////////////////////////////////////////////
-
-void handle_c128_4080() {
-    if (c128_4080) {
-      digitalWrite (C128_40_80_PIN, HIGH);
-      displayState("80col");
-    } else {
-      digitalWrite (C128_40_80_PIN, LOW);
-      displayState("40col");
-    }
-}
-
-void handle_c128_caps() {
-    if (c128_caps) {
-      digitalWrite (C128_CAPS_PIN, HIGH);
-      displayState("CAPS ON");
-    } else {
-      digitalWrite (C128_CAPS_PIN, LOW);
-      displayState("CAPS OFF");
-    }
-}
-
-void handle_joymode() {
-  if (joymode) {
-    String s;
-    s = "joy #" + String(joynum) + " mode ON";
-    displayState(s.c_str());
-  } else {
-    displayState("joy mode OFF");
-  }
-}
 
 void next_keymap() {
     keymapnum++;
@@ -132,30 +100,6 @@ void keyPressed() {
         displayState("shift lock off");
       }
       break;
-    case KEY_RESTORE:
-      digitalWrite (NMI_PIN, HIGH);
-      displayState("NMI");
-      break;
-    case C128_40_80_KEY:
-      c128_4080 = !c128_4080;
-      handle_c128_4080();
-      break;
-    case C128_CAPS_KEY:
-      c128_caps = !c128_caps;
-      handle_c128_caps();
-      break;
-    case KEY_JOY1_MODE:
-      joymode = !joymode;
-      joykeycount = 0;
-      joynum = 1;
-      handle_joymode();
-      break;
-    case KEY_JOY2_MODE:
-      joymode = !joymode;
-      joykeycount = 0;
-      joynum = 2;
-      handle_joymode();
-      break;
     default:
       ckey->c64key(kc_mapped, kpress);
       break;
@@ -174,9 +118,6 @@ void keyReleased() {
   // handle special key functions
   switch (kc_mapped) {
     case IGNORE_KEYCODE:
-      break;
-    case KEY_RESTORE:
-      digitalWrite (NMI_PIN, LOW);
       break;
     default:
       ckey->c64key(kc_mapped, kpress);
@@ -231,7 +172,7 @@ void displayState(const char* s) {
 //////////////////////////////////////////////////////////////
 
 void setup() {
-  ckey = new C128keyboard();
+  ckey = new C16keyboard();
 
   u8g2.begin();
   Wire.begin();
