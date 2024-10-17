@@ -1,0 +1,17 @@
+[20241017]
+Updated photoss. Publish or perish
+
+[20241016]
+Updated XIAO firmware, with MT8808 code and new keyboard mapping everything finally works.
+Need also positional mapping definition and maybe German keymaps?
+
+[20241015]
+PCBs arrived. C16/C64 designator for connector is not visible on silkscreen.
+Need to update XIAO firmware:
+- use MT8808 mapping
+- drop joystick mode, extra keys, C128 keymaps
+- add C16 keymap as default (positional and symbolic, positional default)
+- rename to c16-keyb
+
+[20241009]
+Quickly redesigned using c128 keyboard as the basis. Replaced MT8816 by MT8808. Ordered.

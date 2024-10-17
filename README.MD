@@ -12,13 +12,11 @@ I have kept only USB section as PS/2 keyboards are becoming retro themselves.
 
 This project requires SEEED XIAO SAMD21, which has USB-C socket. USB-C keyboards are rare yet. I use OTG USB-A (female) to USB-C (male) adapter to connect standard PC keyboard.
 
-XXX TBD
-<img src="media/03.assembled.jpg" alt="Assembled adapter with OTG adapter and wireless keyboard dongle" width=800>
+<img src="media/03.installed-back.jpg" alt="Assembled adapter with OTG adapter and wireless keyboard dongle" width=800>
 
 -- Maciej 'YTM/Elysium' Witkowiak
 
-XXX TBD
-<a href="https://www.pcbway.com/project/shareproject/C128_USB_Keyboard_adapter_dcf19251.html"><img src="https://www.pcbway.com/project/img/images/frompcbway-1220.png" alt="PCB from PCBWay" /></a>
+<!--- <a href="https://www.pcbway.com/project/shareproject/C128_USB_Keyboard_adapter_dcf19251.html"><img src="https://www.pcbway.com/project/img/images/frompcbway-1220.png" alt="PCB from PCBWay" /></a> -->
 
 # Features
 
@@ -63,6 +61,9 @@ C64 option:
 
 There is no +5V pin connected to keyboard connector in C16. Connect +5V from anywhere inside computer (e.g. one of the legs of C?? (see photo XXX)) to the square pad of J4.
 
+<img src="media/02.installed.jpg" alt="Interface installed in a C16" width=800>
+
+
 ### Restore key (C64 only)
 
 Install Q1 and R1.
@@ -83,7 +84,7 @@ Use Arduino IDE to compile and flash relevant sketch from [SEEED/C16_keyboard/C1
 
 Use Arduino IDE to compile and flash relevant sketch from [SEEED/C16_keyboard/C64_keyboard.ino](SEEED/C64_keyboard/C64_keyboard.ino).
 
-C64 firmware is a trimmed-down version of C128 USB keyboard firmware with special C128 keys and joystick simulation removed (not possible with MT8808).
+C64 firmware is a trimmed-down version of [C128 USB keyboard firmware](https://github.com/ytmytm/C128-keyboard) with special C128 keys and joystick simulation removed (not possible with MT8808).
 
 # Keyboard mapping
 
@@ -95,7 +96,7 @@ If you add a new keymap you need to add it to `keymaps[]` array at the bottom of
 
 ## C16 positional (default for C16)
 
-XXX TBD
+To be defined...
 
 ## C16 symbolic
 
@@ -129,7 +130,7 @@ As you would expect from standard keycaps, e.g. SHIFT+2 is '@', not '"'.
 
 ## C64 positional (default for C64)
 
-Top row has keys assigned in C128 fashion. This layout works best if you have muscle memory of the original keyboard.
+This layout works best if you have muscle memory of the original keyboard.
 
 | USB key | C64 key |
 |---------|----------|
