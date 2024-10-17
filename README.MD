@@ -59,7 +59,7 @@ C64 option:
 
 ### C16 option
 
-There is no +5V pin connected to keyboard connector in C16. Connect +5V from anywhere inside computer (e.g. one of the legs of C?? (see photo XXX)) to the square pad of J4.
+There is no +5V pin connected to keyboard connector in C16. Connect +5V from anywhere inside computer (e.g. one of the legs of C22 - yellow square on the photo below) to the square pad of J4.
 
 <img src="media/02.installed.jpg" alt="Interface installed in a C16" width=800>
 
