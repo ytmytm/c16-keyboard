@@ -93,7 +93,7 @@ void keyPressed() {
       break;
     case KEY_SHIFT_LOCK:
       shiftlock = !shiftlock;
-      ckey->c64key(KEY_LSHIFT, shiftlock);
+      ckey->c64key(KEY_LSHIFT, shiftlock, kc);
       if (shiftlock) {
         displayState("shift lock on");
       } else {
@@ -101,7 +101,7 @@ void keyPressed() {
       }
       break;
     default:
-      ckey->c64key(kc_mapped, kpress);
+      ckey->c64key(kc_mapped, kpress, kc);
       break;
   }
 }
@@ -120,7 +120,7 @@ void keyReleased() {
     case IGNORE_KEYCODE:
       break;
     default:
-      ckey->c64key(kc_mapped, kpress);
+      ckey->c64key(kc_mapped, kpress, kc);
       break;
   }
 }

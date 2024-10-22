@@ -75,7 +75,7 @@ class C64KeyInfo {
 class C16keyboard {
   public:
     C16keyboard();
-    void c64key(uint16_t c, bool kpress);
+    void c64key(uint16_t c, bool kpress, uint8_t kc);
     uint16_t mapkeycode(uint8_t kc, uint8_t mod);
     void clearAllKeys(void);
     constexpr const uint8_t getNumKeyMaps(void);
