@@ -96,7 +96,46 @@ If you add a new keymap you need to add it to `keymaps[]` array at the bottom of
 
 ## C16 positional (default for C16)
 
-To be defined...
+This is a mixture of C16/Plus4/C64 and Vice layout.
+
+| USB key | C16 key |
+|---------|----------|
+| ESC | RUN/STOP |
+| F1 | F1 |
+| F2 | F4 (shift+F1) |
+| F3 | F2 |
+| F4 | F5 (shift+F2) |
+| F5 | F3 |
+| F6 | F6 (shift+F3) |
+| F7 | HELP |
+| F8 | F7 (shift+HELP) |
+| ` ~ | ESC |
+| - | + |
+| + | - |
+| [ | @ |
+| ] | * |
+| \ | = |
+| ; | : |
+| ' " | ; |
+| Tab | CTRL |
+| Caps lock | RUN/STOP |
+| Home | CLR/HOME |
+| End | RUN/STOP |
+| Delete | DEL |
+| Backspace | DEL |
+| Insert | POUND |
+| Page down | (left arrow) |
+| Page up | (up arrow) |
+| left CTRL | C= key |
+| left Windows | C= key | 
+| right Alt | POUND |
+| right Windows | POUND |
+| right CTRL | = |
+| Print Screen | reset MT8808 switchboard |
+| Scroll Lock | Shift Lock |
+| Pause | switch to next keymap |
+| (keypad) | digits 1-9,0 |
+| (cursors) | cursors |
 
 ## C16 symbolic
 
@@ -117,6 +156,8 @@ To be defined...
 | Caps lock | RUN/STOP |
 | Home | CLR/HOME |
 | End | RUN/STOP |
+| Delete | DEL |
+| Backspace | DEL |
 | left CTRL | CTRL |
 | right CTRL | CTRL |
 | left Windows | C= key | 
