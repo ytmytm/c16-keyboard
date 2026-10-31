@@ -1,5 +1,8 @@
+[20261031]
+Updated firmware to correct problems with sticky modifier keys. Firmware version appears on boot now.
+
 [20241017]
-Updated photoss. Publish or perish
+Updated photos. Publish or perish.
 
 [20241016]
 Updated XIAO firmware, with MT8808 code and new keyboard mapping everything finally works.
