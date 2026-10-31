@@ -150,6 +150,7 @@ public:
 
         KeyboardReportParser() {
                 kbdLockingKeys.bLeds = 0;
+                for (uint8_t i = 0; i < sizeof(prevState.bInfo); i++) prevState.bInfo[i] = 0;
         };
 
 	virtual void Parse(HID *hid, uint32_t is_rpt_id, uint32_t len, uint8_t *buf);
@@ -548,6 +549,12 @@ void HIDBoot<BOOT_PROTOCOL>::EndpointXtract(uint32_t conf, uint32_t iface, uint3
 
 template <const uint8_t BOOT_PROTOCOL>
 uint32_t HIDBoot<BOOT_PROTOCOL>::Release() {
+    if (bPollEnable) {
+        bPollEnable = false;
+        for (uint8_t i = 0; i < epMUL(BOOT_PROTOCOL); ++i) {
+            if (pRptParser[i]) pRptParser[i]->OnDisconnect();
+        }
+    }
 	pUsb->GetAddressPool().FreeAddress(bAddress);
 
 	bConfNum			= 0;

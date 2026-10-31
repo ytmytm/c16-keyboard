@@ -21,6 +21,9 @@
 
 #include <hidboot.h>
 
+// The sketch depends on separate 0xe0..0xe7 modifier usages and disconnect callbacks.
+#define C128_USB_HOST_EVENT_API_VERSION 1
+
 enum KeyboardModifiers {
 	LeftCtrl = 1,
 	LeftShift = 2,
@@ -43,8 +46,10 @@ public:
   uint8_t getOemKey()    { return keyOem; };
 
 protected:
-  virtual void OnKeyDown(uint8_t mod, uint8_t key);
-  virtual void OnKeyUp(uint8_t mod, uint8_t key);
+  void OnDisconnect() override;
+  void OnControlKeysChanged(uint8_t before, uint8_t after) override;
+  void OnKeyDown(uint8_t mod, uint8_t key) override;
+  void OnKeyUp(uint8_t mod, uint8_t key) override;
 
 private:
   HIDBoot<HID_PROTOCOL_KEYBOARD> hostKeyboard;

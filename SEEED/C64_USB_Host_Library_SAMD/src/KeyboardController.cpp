@@ -24,6 +24,7 @@ void __keyboardControllerEmptyCallback() { }
 
 void keyPressed()  __attribute__ ((weak, alias("__keyboardControllerEmptyCallback")));
 void keyReleased() __attribute__ ((weak, alias("__keyboardControllerEmptyCallback")));
+void keyDisconnected() __attribute__ ((weak, alias("__keyboardControllerEmptyCallback")));
 
 void KeyboardController::OnKeyDown(uint8_t _mod, uint8_t _oemKey) {
 	modifiers = _mod;
@@ -37,4 +38,26 @@ void KeyboardController::OnKeyUp(uint8_t _mod, uint8_t _oemKey) {
 	keyOem = _oemKey;
 	key = OemToAscii(_mod, _oemKey);
 	keyReleased();
+}
+
+// Give each modifier a stable HID usage, independent of the other held bits.
+void KeyboardController::OnControlKeysChanged(uint8_t before, uint8_t after) {
+    for (uint8_t i = 0; i < 8; i++) {
+        const uint8_t mask = uint8_t(1U << i);
+        if ((before & mask) && !(after & mask)) OnKeyUp(after, 0xe0 + i);
+    }
+    for (uint8_t i = 0; i < 8; i++) {
+        const uint8_t mask = uint8_t(1U << i);
+        if (!(before & mask) && (after & mask)) OnKeyDown(after, 0xe0 + i);
+    }
+}
+
+void KeyboardController::OnDisconnect() {
+    // A new device must not inherit the previous keyboard's held usages.
+    for (auto &byte : prevState.bInfo) byte = 0;
+    kbdLockingKeys.bLeds = 0;
+    key = 0;
+    keyOem = 0;
+    modifiers = 0;
+    keyDisconnected();
 }

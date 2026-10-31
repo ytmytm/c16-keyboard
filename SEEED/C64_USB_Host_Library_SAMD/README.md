@@ -1,6 +1,32 @@
 # USB Host Library SAMD
 USB Host Library for Arduino SAMD boards
 
+## Keyboard adapter modifications in this repository
+
+This checkout includes the modified library required by the C16 and C64 keyboard
+sketches. Install the matching `SEEED/C64_USB_Host_Library_SAMD.zip` from this
+repository, or compile with the source directory passed to `arduino-cli --library`.
+See the [project setup instructions](../../README.MD#firmware).
+
+- `KeyboardController::getOemKey()` reports raw HID usages. Modifiers use their
+  own usages `0xE0`–`0xE7`; `getModifiers()` reports the complete modifier mask.
+- Every changed modifier bit generates a separate `keyPressed()` or
+  `keyReleased()` callback. Ordinary keys use all six boot-report key slots.
+- Short reports and error usages `0x01`–`0x03` are ignored. Key-slot permutations
+  do not create new key presses.
+- Disconnecting an active device clears parser state and calls
+  `keyDisconnected()`, allowing the application to release its matrix outputs.
+- `C128_USB_HOST_EVENT_API_VERSION` is `1`. This inherited macro name identifies
+  the shared event API for both sketches; it does not enable C128 keymaps.
+
+After changing this library, regenerate its installation ZIP from the repository
+root with `python3 tools/package_usb_library.py`. Verify it with
+`python3 tools/package_usb_library.py --check` and run the regression commands in
+[tests/README.md](../../tests/README.md).
+
+The remaining sections describe the upstream library and its other board and
+peripheral examples, rather than features of the C16 keyboard adapter.
+
 This library is based on the [USB Host Shield Library
 2.0](https://github.com/felis/USB_Host_Shield_2.0) with modifications to work
 on Arduino and Arduino compatible SAMD boards. Be sure to see the README for
@@ -17,8 +43,6 @@ this library.
 Early versions of this library required some changes to the SAMD board package.
 The current version does not, so it works like a regular Arduino library.
 
-![Image of MKR Zero connected to Xbox One controller](./images/mkrxbox.jpg)
-
 ## USB Host Co-Processor
 
 The related [USB Host Co-Processor](https://github.com/gdsports/usbhostcopro)
@@ -27,14 +51,14 @@ keyboard so far) in an Adafruit Trinket M0. This allows boards without USB
 hardware or without USB host software support to use USB host mode by
 connecting via UART to a Trinket M0.
 
-To make using the firmware even easier, the repo includes UF2 binary releases
+The related USB Host Co-Processor project includes UF2 binary releases
 that can be burned into a Trinket M0 by dragging and dropping the UF2 file on
 the TRINKETBOOT USB drive. It is not necessary to install the Arduino IDE,
 libraries, or USB serial driver.
 
 ## Xbox and MKR board example
 
-Components from left to right:
+Example components:
 
 * USB phone/tablet charger, 5V
 * Arduino MKR Zero (but any MKR board should work)
@@ -84,8 +108,6 @@ The Adafruit Metro M4 (SAMD51) and Trinket M0 (SAMD21) work with this library.
 Follow Adafruit's tutorial to install the Adafruit SAMD board package. Other
 Arduino compatible (for example Adafruit, SparkFun, etc.) SAMD boards might
 work.
-
-![Image of Metro M4 connected to PS3 controller clone via Bluetooth](./images/ps3bt.jpg)
 
 Components starting from the Metro M4 board then moving clockwise.
 
