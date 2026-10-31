@@ -1,5 +1,5 @@
 /*
-  C64keyboard - Commodore Keyboard library
+  C16keyboard - Commodore Keyboard library
 
   Copyright (c) 2022 Hartland PC LLC
   Written by Robert VanHazinga
@@ -26,6 +26,8 @@
 #ifndef C16keyboard_h
 #define C16keyboard_h
 
+#include <array>
+
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
 #else
@@ -46,23 +48,22 @@
 #define ST_CP_PIN           1 // RCLK  // 12th pin // latch
 #define DS_PIN              2 // SER   // 14th pin // data
 
-// bits coming out of shift register connected to MT8812/16
+// Six address bits from the shift register to the MT8808 (8 by 8).
 #define ANALOG_SH_AX0     0 // QA (15)
 #define ANALOG_SH_AX1     1 // QB (1)
 #define ANALOG_SH_AX2     2 // ...
 #define ANALOG_SH_AY0     3
 #define ANALOG_SH_AY1     4
 #define ANALOG_SH_AY2     5
-#define ANALOG_SH_AX3     6 // QG (6)
-const uint8_t ANALOG_SH_ARRAY[] = { ANALOG_SH_AY2, ANALOG_SH_AY1, ANALOG_SH_AY0, ANALOG_SH_AX2, ANALOG_SH_AX1, ANALOG_SH_AX0 }; // ANALOG_SH_AX3 would be next, but is handled separately
-// last, 7th bit unused
+const uint8_t ANALOG_SH_ARRAY[] = { ANALOG_SH_AY2, ANALOG_SH_AY1, ANALOG_SH_AY0, ANALOG_SH_AX2, ANALOG_SH_AX1, ANALOG_SH_AX0 };
+// Shift-register outputs QG and QH are unused.
 
-// C64/128 key codes / USB key codes defines
+// C16 matrix addresses and adapter actions.
 #include "keymapping.h"
 
-class C64KeyInfo {
+class C16KeyInfo {
   public:
-    constexpr C64KeyInfo(const uint16_t c, const char* name) :
+    constexpr C16KeyInfo(const uint16_t c, const char* name) :
     m_keycode(c), m_name(name)
     {};
     constexpr auto get_keycode() const { return m_keycode; }
@@ -72,51 +73,60 @@ class C64KeyInfo {
     const char *m_name;
 };
 
+// HID boot reports hold at most six ordinary keys and eight modifiers.
+struct HeldKey {
+    uint8_t usage = 0;
+    uint16_t mapped = IGNORE_KEYCODE;
+};
+
 class C16keyboard {
   public:
-    C16keyboard();
-    void c64key(uint16_t c, bool kpress, uint8_t kc);
-    uint16_t mapkeycode(uint8_t kc, uint8_t mod);
+    void begin(void);
+    void setKey(uint16_t c, bool kpress, uint8_t kc);
+    uint16_t mapkeycode(uint8_t kc);
     void clearAllKeys(void);
-    constexpr const uint8_t getNumKeyMaps(void);
+    void updateShiftSwitches(void);
+    void restoreModifiers(uint8_t modifiers);
+    constexpr uint8_t getNumKeyMaps(void);
     const char* getCurrentKeyMapName(void);
 };
 
-class C64Key {
+class C16Key {
   public:
-    constexpr C64Key(const int16_t keycode, const uint16_t unshifted, const uint16_t shifted) :
+    constexpr C16Key(const int16_t keycode, const uint16_t unshifted, const uint16_t shifted) :
     m_keycode(keycode), m_unshifted(unshifted), m_shifted(shifted)
     {};
     constexpr auto get_keycode() const { return m_keycode; }
-    auto get(bool shifted = false) const {
-      if (shifted) { return m_shifted; } else { return m_unshifted; };
+    constexpr uint16_t get(bool shifted = false) const {
+      return shifted ? m_shifted : m_unshifted;
     }
   private:
     const int16_t m_keycode;
     const uint16_t m_unshifted, m_shifted;
 };
 
-class C64KeyMap {
+using ModifierMap = std::array<uint16_t, 8>;
+
+class C16KeyMap {
   public:
-    constexpr C64KeyMap(const char* name, const C64Key *map, const uint16_t mapsize, const uint16_t mods[8]) :
+    constexpr C16KeyMap(const char* name, const C16Key *map, const uint16_t mapsize, const ModifierMap &mods) :
     m_name(name), m_map(map), m_mapsize(mapsize), m_mods(mods)
     {};
     constexpr const char* getName() const { return m_name; };
-    constexpr auto getMods() const { return m_mods; };
-    auto getKey(auto keycode) const {
-      for (auto i=0;i<m_mapsize;i++) {
+    constexpr const ModifierMap &getMods() const { return m_mods; };
+    constexpr C16Key getKey(uint8_t keycode) const {
+      for (uint16_t i = 0; i < m_mapsize; ++i) {
         if (m_map[i].get_keycode() == keycode) {
           return m_map[i];
         }
       }
-      return nullkey;
+      return C16Key(0, IGNORE_KEYCODE, IGNORE_KEYCODE);
     }
   private:
-    constexpr static C64Key nullkey = C64Key(0,IGNORE_KEYCODE,IGNORE_KEYCODE);
     const char *m_name;
-    const C64Key *m_map;
+    const C16Key *m_map;
     const uint16_t m_mapsize;
-    const uint16_t *m_mods;
+    const ModifierMap &m_mods;
 };
 
 #endif

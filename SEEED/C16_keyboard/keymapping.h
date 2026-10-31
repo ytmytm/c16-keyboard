@@ -1,30 +1,14 @@
+/*
+  C16 USB key mappings use the six-bit MT8808 matrix addresses below.
+  Each USB HID usage has unshifted and shifted mappings. OR a matrix address
+  with MOD_SHIFT (0x100) to invert the shared Shift output for that mapping.
+  Use IGNORE_KEYCODE for unused usages; actions are outside the matrix range.
 
-/* Maps are positional in relation to keyboard USB codes.
-Place C64 key byte (Chart is found in KEYBIN spreadsheet)
-into the equivalent keyboard USB code code position.
-For C64 keyboards normally USB code set 2.
-
-Each map has a normal (without shift) and shifted (with shift) array.
-
-In situations where there is a shift difference, add 64 to the C64 key byte. 
-This is when a key is shifted on keyboard, but not shifted on the C64 or vise-versa.
-
-Unused USB codes need to have the IGNORE_KEYCODE value in place.(Default 170)
-
-https://deskthority.net/wiki/Scancode#USB_HID_Usage_Codes
-
-https://sites.google.com/site/h2obsession/CBM/C128/keyboard-scan
-
+  Modified for C16 by Maciej 'YTM/Elysium' Witkowiak
 */
 
-//  Modified for C16 by Maciej 'YTM/Elysium' Witkowiak
-
-// order of this table is so weird (if you look into C64/C128 keyboard matrix) because
-// of the way how original (PS/2) code had MTxxxx lines attached
-// it's [AX0..2,AY0..2] (AX*8+AY) but 3 bits of AX and 3 bits of AY are both in reverse order
-// there are 6 bits of key address total,
-// AX3 is used for logic table gap on MT8812/16 for X6/X7 and for C128 keys (lines X8/X9/X10)
-// anything above $00ff is a special modifier or action key
+// Address bits follow the PCB wiring: [AY2, AY1, AY0, AX2, AX1, AX0].
+// The C16 matrix has eight rows and eight columns; AX3 is not used.
 
 enum C16_Key {
    // C16 8x8 keymap
@@ -58,7 +42,7 @@ enum C16_Key {
   ,KEY_PLUS = 0x1B          // 27 +
   ,KEY_STAR = 0x1C          // 28 *
   ,KEY_EQUALS = 0x1D        // 29 =
-  ,KEY_CRSR_RIGHT = 0x1E    // 29 CURSOR RIGHT
+  ,KEY_CRSR_RIGHT = 0x1E    // 30 CURSOR RIGHT
   ,KEY_SLASH = 0x1F         // 31 /
   ,KEY_3 = 0x20             // 32 3
   ,KEY_Z = 0x21             // 33 Z
@@ -67,7 +51,7 @@ enum C16_Key {
   ,KEY_W = 0x24             // 36 W
   ,KEY_S = 0x25             // 37 S
   ,KEY_4 = 0x26             // 38 4
-  ,KEY_LSHIFT = 0x27        // 39 LSHIFT
+  ,KEY_SHIFT = 0x27        // 39 SHIFT
   ,KEY_CRSR_DOWN = 0x28     // 40 CURSOR DOWN
   ,KEY_DOT = 0x29           // 41 .
   ,KEY_L = 0x2A             // 42 L
@@ -94,7 +78,7 @@ enum C16_Key {
   ,KEY_RUN_STOP = 0x3F      // 63 RUN/STOP
 
   // modifiers
-  ,MOD_SHIFT = 0x100        // virtual shift modifier (add shift on base map, remove shift on shifted map) (this is used as a bit modifier)
+  ,MOD_SHIFT = 0x100        // differential Shift bit: invert the shared Shift output
   // special actions
   ,KEY_KEYMAP = 0x401       // special action: switch to next keymap
   ,KEY_MT_RESET = 0x402     // special action: reset MT88XX chip

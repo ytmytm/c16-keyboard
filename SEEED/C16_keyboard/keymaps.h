@@ -4,7 +4,7 @@
 //  Maciej 'YTM/Elysium' Witkowiak
 
 // mapped key information
-constexpr static C64KeyInfo key_infos[] = {
+constexpr static C16KeyInfo key_infos[] = {
    { KEY_DEL, "INST/DEL" }
   ,{ KEY_F1, "F1" }
   ,{ KEY_POUND, "POUND" }
@@ -44,7 +44,7 @@ constexpr static C64KeyInfo key_infos[] = {
   ,{ KEY_W, "W" }
   ,{ KEY_S, "S" }
   ,{ KEY_4, "4" }
-  ,{ KEY_LSHIFT, "left SHIFT" }
+  ,{ KEY_SHIFT, "SHIFT" }
   ,{ KEY_CRSR_DOWN, "crsr v" }
   ,{ KEY_DOT, "." }
   ,{ KEY_L, "L" }
@@ -70,34 +70,31 @@ constexpr static C64KeyInfo key_infos[] = {
   ,{ KEY_2, "2" }
   ,{ KEY_RUN_STOP, "RUN/STOP" }
 
-  ,{ MOD_SHIFT, "virtual SHIFT" }
   ,{ KEY_KEYMAP, "switch keymap" }
   ,{ KEY_MT_RESET, "reset MT88XX" }
   ,{ KEY_SHIFT_LOCK, "SHIFT LOCK" }
   ,{ IGNORE_KEYCODE, "ignore key" }
 };
 
-constexpr static uint16_t key_infos_nsize = sizeof(key_infos) / sizeof(key_infos[0]);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//static const uint16_t MODKEYS[8] {KEY_CTRL,KEY_LSHIFT,KEY_RUN_STOP,KEY_CBM,KEY_CTRL,KEY_RSHIFT,KEY_RUN_STOP,0};
 // MODKEYS bits
 // 0 - 0x01 - left CTRL
 // 1 - 0x02 - left SHIFT
 // 2 - 0x04 - left ALT
 // 3 - 0x08 - left Windows
 // 4 - 0x10 - right CTRL
-// 5 - 0x20 - right SHIFT(?)
+// 5 - 0x20 - right SHIFT
 // 6 - 0x40 - right ALT (AltGr)
 // 7 - 0x80 - right Windows
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // C16 positional
-// c16 positional (left CTRL is C=, left WIN = C= both shifts unchanged, right WIN = right ALT = pound, right CTRL = equals)
-constexpr static uint16_t C16_pos_mods[8] = {KEY_CBM, KEY_LSHIFT, IGNORE_KEYCODE, IGNORE_KEYCODE, KEY_EQUALS, KEY_LSHIFT, KEY_POUND, KEY_POUND};
-constexpr static C64Key C16_pos_keys[] = {
+// c16 positional (left CTRL is C=, left WIN ignored, both shifts map to SHIFT, right WIN = right ALT = pound, right CTRL = equals)
+constexpr static ModifierMap C16_pos_mods = {{KEY_CBM, KEY_SHIFT, IGNORE_KEYCODE, IGNORE_KEYCODE, KEY_EQUALS, KEY_SHIFT, KEY_POUND, KEY_POUND}};
+constexpr static C16Key C16_pos_keys[] = {
    { 0x00, IGNORE_KEYCODE, IGNORE_KEYCODE }  // Reserved
   ,{ 0x01, IGNORE_KEYCODE, IGNORE_KEYCODE }  // ErrorRollOver
   ,{ 0x02, IGNORE_KEYCODE, IGNORE_KEYCODE }  // POSTFail
@@ -240,8 +237,8 @@ constexpr static uint16_t C16_pos_nkeys = sizeof(C16_pos_keys) / sizeof(C16_pos_
 
 // C16 symbolic
 // c16 symbolic (both controls are CTRL, both shifts unchanged, left/right WIN is CBM, the rest ignored)
-constexpr static uint16_t C16_sym_mods[8] = {KEY_CTRL, KEY_LSHIFT, IGNORE_KEYCODE, KEY_CBM, KEY_CTRL, KEY_LSHIFT, IGNORE_KEYCODE, KEY_CBM};
-constexpr static C64Key C16_sym_keys[] = {
+constexpr static ModifierMap C16_sym_mods = {{KEY_CTRL, KEY_SHIFT, IGNORE_KEYCODE, KEY_CBM, KEY_CTRL, KEY_SHIFT, IGNORE_KEYCODE, KEY_CBM}};
+constexpr static C16Key C16_sym_keys[] = {
    { 0x00, IGNORE_KEYCODE, IGNORE_KEYCODE }  // Reserved
   ,{ 0x01, IGNORE_KEYCODE, IGNORE_KEYCODE }  // ErrorRollOver
   ,{ 0x02, IGNORE_KEYCODE, IGNORE_KEYCODE }  // POSTFail
@@ -383,9 +380,9 @@ constexpr static uint16_t C16_sym_nkeys = sizeof(C16_sym_keys) / sizeof(C16_sym_
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-constexpr static C64KeyMap keymaps[] = {
-    C64KeyMap("C16 positional", C16_pos_keys, C16_pos_nkeys, C16_pos_mods )
-   ,C64KeyMap("C16 symbolic", C16_sym_keys, C16_sym_nkeys, C16_sym_mods )
+constexpr static C16KeyMap keymaps[] = {
+    C16KeyMap("C16 positional", C16_pos_keys, C16_pos_nkeys, C16_pos_mods )
+   ,C16KeyMap("C16 symbolic", C16_sym_keys, C16_sym_nkeys, C16_sym_mods )
 };
 
 constexpr static uint8_t nkeymaps = sizeof(keymaps) / sizeof(keymaps[0]);

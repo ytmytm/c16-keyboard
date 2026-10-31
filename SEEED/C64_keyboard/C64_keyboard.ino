@@ -26,9 +26,15 @@
 */
 
 #include "C64keyboard.h"
+#include "firmware_version.h"
 
 
 #include <KeyboardController.h>
+
+#if !defined(C128_USB_HOST_EVENT_API_VERSION) || C128_USB_HOST_EVENT_API_VERSION < 1
+#error "Outdated USB host library: reinstall SEEED/C64_USB_Host_Library_SAMD.zip from this checkout in Arduino IDE."
+#endif
+
 
 
 // Initialize USB Controller
@@ -39,7 +45,7 @@ KeyboardController keyboard(usb);
 
 
 C128keyboard *ckey;
-static volatile uint8_t kc, mod, modbuff;
+static volatile uint8_t kc, mod;
 static volatile uint16_t kc_mapped;
 static volatile uint8_t keymapnum = 0; // current keymap number
 
@@ -64,6 +70,8 @@ bool displayPresent = false;
 
 U8G2_SSD1306_128X32_UNIVISION_1_HW_I2C u8g2(U8G2_R0);
 
+void displayState(const char* s, bool showVersion = false);
+
 //////////////////////////////////////////////////////////////
 
 void next_keymap() {
@@ -78,7 +86,7 @@ void keyPressed() {
   kc = keyboard.getOemKey();
   mod = keyboard.getModifiers();
   kpress = true;
-  kc_mapped = ckey->mapkeycode(kc,mod);
+  kc_mapped = ckey->mapkeycode(kc);
   displayKey();
 
   // handle special key functions
@@ -95,7 +103,7 @@ void keyPressed() {
       break;
     case KEY_SHIFT_LOCK:
       shiftlock = !shiftlock;
-      ckey->c64key(KEY_LSHIFT, shiftlock, kc);
+      ckey->updateShiftSwitches();
       if (shiftlock) {
         displayState("shift lock on");
       } else {
@@ -103,7 +111,7 @@ void keyPressed() {
       }
       break;
     case KEY_RESTORE:
-      digitalWrite (NMI_PIN, HIGH);
+      ckey->c64key(kc_mapped, kpress, kc);
       displayState("NMI");
       break;
     default:
@@ -118,20 +126,16 @@ void keyReleased() {
   kc = keyboard.getOemKey();
   mod = keyboard.getModifiers();
   kpress = false;
-  kc_mapped = ckey->mapkeycode(kc,mod);
+  kc_mapped = ckey->mapkeycode(kc);
   displayKey();
 
-  // handle special key functions
-  switch (kc_mapped) {
-    case IGNORE_KEYCODE:
-      break;
-    case KEY_RESTORE:
-      digitalWrite (NMI_PIN, LOW);
-      break;
-    default:
-      ckey->c64key(kc_mapped, kpress, kc);
-      break;
-  }
+  // Always release the mapping saved on key-down.
+  ckey->c64key(kc_mapped, kpress, kc);
+}
+
+// Release outputs when USB disappears without key-up reports.
+void keyDisconnected() {
+  ckey->clearAllKeys();
 }
 
 //////////////////////////////////////////////////////////////
@@ -170,7 +174,7 @@ void displayKey() {
 }
 
 
-void displayState(const char* s) {
+void displayState(const char* s, bool showVersion) {
   if (!displayPresent) { return; }
   u8g2.firstPage();
   do {
@@ -178,6 +182,11 @@ void displayState(const char* s) {
    u8g2.setFont(u8g2_font_7x13B_tr);
    u8g2.setCursor(0,14);
    u8g2.print(s);
+   if (showVersion) {
+     u8g2.setCursor(0,31);
+     u8g2.print("FW ");
+     u8g2.print(firmwareVersion);
+   }
   } while ( u8g2.nextPage() );
 }
 
@@ -198,7 +207,7 @@ void setup() {
 
   usb.Init();
 
-  displayState("Hello world!");
+  displayState("Hello world!", true);
 
   ckey->clearAllKeys(); // just in case RESET line is not used
 }
@@ -228,7 +237,7 @@ void loop() {
       case USB_STATE_CONFIGURING: state="USB Configuring"; break;
       case USB_STATE_RUNNING: state="USB Running"; break;
     }
-    displayState(state.c_str());
+    displayState(state.c_str(), true);
     lastUSBstate = currentUSBstate;
   }
 }

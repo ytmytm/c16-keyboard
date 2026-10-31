@@ -22,7 +22,7 @@
 
 */
 
-#include <map>
+#include <algorithm>
 
 #include "C16keyboard.h"
 
@@ -42,18 +42,14 @@ void resetMT88(void) {
   digitalWrite(ANALOG_SW_STROBE, LOW);
   digitalWrite(ANALOG_SW_DATA , HIGH);
 
-  lshift = false;
+  shiftHeld = false;
   shiftlock = false;
-  virtshift = false;
 
   keymapnum = 0;
-  modbuff = 0;
-  kpress = false;
 }
 
 
 void setswitch(uint8_t c,bool kstate) {
-  int bitr;
   bool state;
 
   digitalWrite(ANALOG_SW_DATA , kstate);
@@ -68,115 +64,105 @@ void setswitch(uint8_t c,bool kstate) {
     digitalWrite( ANALOG_SW_STROBE, LOW);
   }
 
-  // Reset switch state pin to default high state (Key press).
-  //digitalWrite(ANALOG_SW_DATA , HIGH);
 }
 
 //////////////////////////////////////////////////////////////
 
-const char* get_mapped_key_name(auto keycode) {
-      if (keycode & MOD_SHIFT) { keycode -= MOD_SHIFT; };
-      for (auto i=0;i<key_infos_nsize;i++) {
-        if (key_infos[i].get_keycode() == keycode) {
-          return key_infos[i].get_name();
-        }
-      }
-      return NULL;
+const char* get_mapped_key_name(uint16_t keycode) {
+    // Only matrix mappings carry differential Shift. Action codes (including
+    // IGNORE_KEYCODE) must retain their complete identity.
+    if ((keycode & ~MOD_SHIFT) < 64) keycode &= ~MOD_SHIFT;
+    for (const auto &info : key_infos) {
+        if (info.get_keycode() == keycode) return info.get_name();
+    }
+    return nullptr;
 }
 
 //////////////////////////////////////////////////////////////
 
-// This map will store the original keycode for each pressed key
-std::map<uint8_t, uint16_t> keyStateTable;
+// Saved key-down mappings, with no heap allocation.
+std::array<HeldKey, 14> keyStateTable;
 
-constexpr const uint8_t C16keyboard::getNumKeyMaps(void) { return nkeymaps; };
+constexpr uint8_t C16keyboard::getNumKeyMaps(void) { return nkeymaps; };
 
 const char* C16keyboard::getCurrentKeyMapName(void) { return keymaps[keymapnum].getName(); };
 
-uint16_t C16keyboard::mapkeycode(uint8_t kc, uint8_t mod) {
+uint16_t C16keyboard::mapkeycode(uint8_t kc) {
 
-    // handle modifier keys
-    if (mod != modbuff) {
-      uint16_t c;
-      auto MODKEYS = keymaps[keymapnum].getMods();
-      for (uint8_t i=0;i<8; i++) {
-        if (bitRead(modbuff,i) != bitRead(mod,i)) {
-          c = MODKEYS[i];
-          modbuff = mod;
-          return c;
-        }
-      }
+    // Modifiers arrive as individual HID usages, just like normal keys.
+    if (kc >= 0xe0 && kc <= 0xe7) {
+      return keymaps[keymapnum].getMods()[kc - 0xe0];
     }
 
     // scan for any other key
-    return keymaps[keymapnum].getKey(kc).get(lshift || shiftlock || virtshift);
+    return keymaps[keymapnum].getKey(kc).get(shiftHeld || shiftlock);
 }
 
 
-void C16keyboard::c64key(uint16_t c, bool kpress, uint8_t kc) {
-
-    // return early
-    if (c == IGNORE_KEYCODE) return;
-
-    // update shift states
-    if (c == KEY_LSHIFT) lshift = kpress;
-
-    // lshift key release can be ignored if shiftlock/virtual shift are still on
-    if (!kpress && c == KEY_LSHIFT && (shiftlock || virtshift)) {
-      return;
+void C16keyboard::updateShiftSwitches(void) {
+    bool inverted = false;
+    for (const auto &entry : keyStateTable) {
+        if (entry.mapped != IGNORE_KEYCODE && (entry.mapped & MOD_SHIFT)) inverted = true;
     }
+    const bool shifted = shiftHeld || shiftlock;
+    setswitch(KEY_SHIFT, inverted ? !shifted : shifted);
+}
 
+void C16keyboard::setKey(uint16_t c, bool kpress, uint8_t kc) {
+
+    // Resolve releases before any side effects: the active keyboard
+    // layout may have changed since this physical key was pressed.
+    auto slot = std::find_if(keyStateTable.begin(), keyStateTable.end(),
+        [kc](const HeldKey &entry) {
+            return entry.mapped != IGNORE_KEYCODE && entry.usage == kc;
+        });
     if (kpress) {
-        // Map keycode and store in key state table
-        keyStateTable[kc] = c;
+        if (c == IGNORE_KEYCODE || slot != keyStateTable.end()) return;
+        slot = std::find_if(keyStateTable.begin(), keyStateTable.end(),
+            [](const HeldKey &entry) { return entry.mapped == IGNORE_KEYCODE; });
+        if (slot == keyStateTable.end()) return;
+        slot->usage = kc;
+        slot->mapped = c;
     } else {
-        // Key release event
-        // Retrieve keycode from key state table
-        // Retrieve the stored keycode
-        auto it = keyStateTable.find(kc);
-        if (it != keyStateTable.end()) {
-            c = it->second;
-            keyStateTable.erase(it);  // Remove the key from the state table
-        } else {
-            // If the key wasn't found, ignore the release event
-            return;
-        }
+        if (slot == keyStateTable.end()) return;
+        c = slot->mapped;
+        *slot = HeldKey{};
     }
 
-    // Differential shift conversion
-    if (c & MOD_SHIFT ) {
-      c -= MOD_SHIFT;
-      if (kpress) {
-        // setup shift key state if this is key press
-        if (lshift || shiftlock || virtshift) { // if any of the shifts is active right now
-          setswitch(KEY_LSHIFT,LOW);
-        } else {
-          setswitch(KEY_LSHIFT,HIGH); // if any of the shifts is inactive right now, enable left shift
-        }
-      } else {
-      // Restore shift states if this was key release
-        if (!kpress) {
-          setswitch(KEY_LSHIFT, lshift || shiftlock || virtshift);
-        }
+    shiftHeld = false;
+    for (const auto &entry : keyStateTable) {
+      if (entry.mapped == KEY_SHIFT) shiftHeld = true;
+    }
+
+    const bool updateShifts = c == KEY_SHIFT || (c & MOD_SHIFT);
+
+    // Establish Shift before closing a key; release a key before restoring Shift.
+    if (updateShifts && kpress) updateShiftSwitches();
+
+    const uint16_t target = c & ~MOD_SHIFT;
+    if (target < 64 && target != KEY_SHIFT) {
+      bool held = false;
+      for (const auto &entry : keyStateTable) {
+        if ((entry.mapped & ~MOD_SHIFT) == target) held = true;
       }
+      setswitch(target, held);
     }
-
-    // Process normal keypress
-    if (c != IGNORE_KEYCODE){
-      setswitch(c & 0xff,kpress);
-    }
+    if (updateShifts && !kpress) updateShiftSwitches();
 }
 
 
 void C16keyboard::clearAllKeys(void) {
+  keyStateTable.fill(HeldKey{});
+  shiftHeld = false;
+  shiftlock = false;
   // MT88xx RESET substitute, just go through all the switches in the matrix and clear them
-  for (uint8_t c=0;c<128;c++) { // we have 7 address bits only (AX0..3, AY0..2)
+  for (uint8_t c=0;c<64;c++) { // MT8808 has 64 switches (8 by 8)
     setswitch(c,LOW);
   }
 }
 
 
-C16keyboard::C16keyboard() {
+void C16keyboard::begin(void) {
 
   // initialize the pins
   pinMode(ANALOG_SW_STROBE, OUTPUT);  // MT88XX strobe
@@ -184,5 +170,17 @@ C16keyboard::C16keyboard() {
   pinMode(ANALOG_SW_RESET, OUTPUT); // MT88XX reset
 
   resetMT88();
+  clearAllKeys();
 
+}
+
+// Print Screen resets to the default layout, but a held USB modifier produces
+// no new down event until released. Rebuild those sources from the current mask.
+void C16keyboard::restoreModifiers(uint8_t modifiers) {
+    for (uint8_t bit = 0; bit < 8; ++bit) {
+        if (modifiers & (1U << bit)) {
+            const uint8_t usage = 0xe0 + bit;
+            setKey(mapkeycode(usage), true, usage);
+        }
+    }
 }

@@ -50,13 +50,11 @@ void resetMT88(void) {
   virtshift = false;
 
   keymapnum = 0;
-  modbuff = 0;
   kpress = false;
 }
 
 
 void setswitch(uint8_t c,bool kstate) {
-  int bitr;
   bool state;
 
   digitalWrite(ANALOG_SW_DATA , kstate);
@@ -77,14 +75,12 @@ void setswitch(uint8_t c,bool kstate) {
 
 //////////////////////////////////////////////////////////////
 
-const char* get_mapped_key_name(auto keycode) {
-      if (keycode & MOD_SHIFT) { keycode -= MOD_SHIFT; };
-      for (auto i=0;i<key_infos_nsize;i++) {
-        if (key_infos[i].get_keycode() == keycode) {
-          return key_infos[i].get_name();
-        }
-      }
-      return NULL;
+const char* get_mapped_key_name(uint16_t keycode) {
+    keycode &= ~MOD_SHIFT;
+    for (const auto &info : key_infos) {
+        if (info.get_keycode() == keycode) return info.get_name();
+    }
+    return nullptr;
 }
 
 //////////////////////////////////////////////////////////////
@@ -92,23 +88,15 @@ const char* get_mapped_key_name(auto keycode) {
 // This map will store the original keycode for each pressed key
 std::map<uint8_t, uint16_t> keyStateTable;
 
-constexpr const uint8_t C128keyboard::getNumKeyMaps(void) { return nkeymaps; };
+constexpr uint8_t C128keyboard::getNumKeyMaps(void) { return nkeymaps; };
 
 const char* C128keyboard::getCurrentKeyMapName(void) { return keymaps[keymapnum].getName(); };
 
-uint16_t C128keyboard::mapkeycode(uint8_t kc, uint8_t mod) {
+uint16_t C128keyboard::mapkeycode(uint8_t kc) {
 
-    // handle modifier keys
-    if (mod != modbuff) {
-      uint16_t c;
-      auto MODKEYS = keymaps[keymapnum].getMods();
-      for (uint8_t i=0;i<8; i++) {
-        if (bitRead(modbuff,i) != bitRead(mod,i)) {
-          c = MODKEYS[i];
-          modbuff = mod;
-          return c;
-        }
-      }
+    // Modifiers arrive as individual HID usages, just like normal keys.
+    if (kc >= 0xe0 && kc <= 0xe7) {
+      return keymaps[keymapnum].getMods()[kc - 0xe0];
     }
 
     // scan for any other key
@@ -116,67 +104,74 @@ uint16_t C128keyboard::mapkeycode(uint8_t kc, uint8_t mod) {
 }
 
 
+void C128keyboard::updateShiftSwitches(void) {
+    bool inverted = false;
+    for (const auto &entry : keyStateTable) {
+        if (entry.second & MOD_SHIFT) inverted = true;
+    }
+    const bool left = lshift || shiftlock || virtshift;
+    setswitch(KEY_LSHIFT, inverted ? !(left || rshift) : left);
+    setswitch(KEY_RSHIFT, inverted ? false : rshift);
+}
+
 void C128keyboard::c64key(uint16_t c, bool kpress, uint8_t kc) {
 
-    // return early
-    if (c == IGNORE_KEYCODE) return;
+    // Resolve releases before any side effects: the active keyboard
+    // layout may have changed since this physical key was pressed.
+    if (kpress) {
+        if (c == IGNORE_KEYCODE || keyStateTable.count(kc)) return;
+        keyStateTable[kc] = c;
+    } else {
+        auto it = keyStateTable.find(kc);
+        if (it == keyStateTable.end()) return;
+        c = it->second;
+        keyStateTable.erase(it);
+    }
 
-    // update shift states
-    if (c == KEY_LSHIFT) lshift = kpress;
-    if (c == KEY_RSHIFT) rshift = kpress;
-
-    // lshift key release can be ignored if shiftlock/virtual shift are still on
-    if (!kpress && c == KEY_LSHIFT && (shiftlock || virtshift)) {
+    // Both AltGr and PageUp can hold RESTORE. Releasing either source must
+    // leave NMI asserted until the final source is released.
+    if (c == KEY_RESTORE) {
+      bool held = false;
+      for (const auto &entry : keyStateTable) {
+        if (entry.second == KEY_RESTORE) held = true;
+      }
+      digitalWrite(NMI_PIN, held);
       return;
     }
 
-    if (kpress) {
-        // Map keycode and store in key state table
-        keyStateTable[kc] = c;
-    } else {
-        // Key release event
-        // Retrieve keycode from key state table
-        // Retrieve the stored keycode
-        auto it = keyStateTable.find(kc);
-        if (it != keyStateTable.end()) {
-            c = it->second;
-            keyStateTable.erase(it);  // Remove the key from the state table
-        } else {
-            // If the key wasn't found, ignore the release event
-            return;
-        }
+    lshift = false;
+    rshift = false;
+    for (const auto &entry : keyStateTable) {
+      if (entry.second == KEY_LSHIFT) lshift = true;
+      if (entry.second == KEY_RSHIFT) rshift = true;
     }
 
-    // Differential shift conversion
-    if (c & MOD_SHIFT ) {
-      c -= MOD_SHIFT;
-      if (kpress) {
-        // setup shift key state if this is key press
-        if (lshift || rshift || shiftlock || virtshift) { // if any of the shifts is active right now
-          setswitch(KEY_RSHIFT,LOW); // disable all of them
-          setswitch(KEY_LSHIFT,LOW);
-        } else {
-          setswitch(KEY_LSHIFT,HIGH); // if any of the shifts is inactive right now, enable left shift
-        }
-      } else {
-      // Restore shift states if this was key release
-        if (!kpress) {
-          setswitch(KEY_LSHIFT, lshift || shiftlock || virtshift);
-          setswitch(KEY_RSHIFT, rshift);
-        }
+    const bool updateShifts = c == KEY_LSHIFT || c == KEY_RSHIFT || (c & MOD_SHIFT);
+
+    // Establish Shift before closing a key; release a key before restoring Shift.
+    if (updateShifts && kpress) updateShiftSwitches();
+
+    const uint16_t target = c & ~MOD_SHIFT;
+    if (target < 64 && target != KEY_LSHIFT && target != KEY_RSHIFT) {
+      bool held = false;
+      for (const auto &entry : keyStateTable) {
+        if ((entry.second & ~MOD_SHIFT) == target) held = true;
       }
+      setswitch(target, held);
     }
-
-    // Process normal keypress
-    if (c != IGNORE_KEYCODE){
-      setswitch(c & 0xff,kpress);
-    }
+    if (updateShifts && !kpress) updateShiftSwitches();
 }
 
 
 void C128keyboard::clearAllKeys(void) {
+  keyStateTable.clear();
+  digitalWrite(NMI_PIN, LOW);
+  lshift = false;
+  rshift = false;
+  shiftlock = false;
+  virtshift = false;
   // MT88xx RESET substitute, just go through all the switches in the matrix and clear them
-  for (uint8_t c=0;c<128;c++) { // we have 7 address bits only (AX0..3, AY0..2)
+  for (uint8_t c=0;c<64;c++) { // MT8808 has 64 switches (8 by 8)
     setswitch(c,LOW);
   }
 }

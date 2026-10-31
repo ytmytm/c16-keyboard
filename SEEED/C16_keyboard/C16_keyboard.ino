@@ -2,7 +2,7 @@
 // IDE: Seeeduino XIAO SAMD
 
 /*
-  C64keyboard - Commodore Keyboard library
+  C16keyboard - Commodore Keyboard library
 
   Copyright (c) 2022 Hartland PC LLC
   Written by Robert VanHazinga
@@ -26,9 +26,15 @@
 */
 
 #include "C16keyboard.h"
+#include "firmware_version.h"
 
 
 #include <KeyboardController.h>
+
+#if !defined(C128_USB_HOST_EVENT_API_VERSION) || C128_USB_HOST_EVENT_API_VERSION < 1
+#error "Outdated USB host library: reinstall SEEED/C64_USB_Host_Library_SAMD.zip from this checkout in Arduino IDE."
+#endif
+
 
 
 // Initialize USB Controller
@@ -38,15 +44,14 @@ USBHost usb;
 KeyboardController keyboard(usb);
 
 
-C16keyboard *ckey;
-static volatile uint8_t kc, mod, modbuff;
-static volatile uint16_t kc_mapped;
-static volatile uint8_t keymapnum = 0; // current keymap number
+C16keyboard ckey;
+static uint8_t kc, mod;
+static uint16_t kc_mapped;
+static uint8_t keymapnum = 0; // current keymap number
 
-static volatile bool kpress=false;
-static volatile bool lshift=false, shiftlock=false, virtshift=false; // shift states: left, lock(left), virtual (from mapping)
+static bool shiftHeld=false, shiftlock=false; // USB Shift sources and Shift Lock
 
-static volatile unsigned long lastPressedMillis = 0, currentMillis = 0;
+static unsigned long lastPressedMillis = 0, currentMillis = 0;
 constexpr const unsigned long inactivePeriodMillis = 5000; // keep the message on OLED for 5 seconds after a keypress
 
 //////////////////////////////////////////////////////////////
@@ -64,11 +69,13 @@ bool displayPresent = false;
 
 U8G2_SSD1306_128X32_UNIVISION_1_HW_I2C u8g2(U8G2_R0);
 
+void displayState(const char* s, bool showVersion = false);
+
 //////////////////////////////////////////////////////////////
 
 void next_keymap() {
     keymapnum++;
-    if (keymapnum == ckey->getNumKeyMaps()) keymapnum = 0;
+    if (keymapnum == ckey.getNumKeyMaps()) keymapnum = 0;
     displayKeyMap();
 }
 
@@ -77,8 +84,7 @@ void keyPressed() {
   lastPressedMillis = currentMillis;
   kc = keyboard.getOemKey();
   mod = keyboard.getModifiers();
-  kpress = true;
-  kc_mapped = ckey->mapkeycode(kc,mod);
+  kc_mapped = ckey.mapkeycode(kc);
   displayKey();
 
   // handle special key functions
@@ -87,7 +93,8 @@ void keyPressed() {
       break;
     case KEY_MT_RESET:
       resetMT88();
-      ckey->clearAllKeys();
+      ckey.clearAllKeys();
+      ckey.restoreModifiers(mod);
       displayState("reset MT");
       break;
     case KEY_KEYMAP:
@@ -95,7 +102,7 @@ void keyPressed() {
       break;
     case KEY_SHIFT_LOCK:
       shiftlock = !shiftlock;
-      ckey->c64key(KEY_LSHIFT, shiftlock, kc);
+      ckey.updateShiftSwitches();
       if (shiftlock) {
         displayState("shift lock on");
       } else {
@@ -103,7 +110,7 @@ void keyPressed() {
       }
       break;
     default:
-      ckey->c64key(kc_mapped, kpress, kc);
+      ckey.setKey(kc_mapped, true, kc);
       break;
   }
 }
@@ -113,18 +120,16 @@ void keyReleased() {
   lastPressedMillis = currentMillis;
   kc = keyboard.getOemKey();
   mod = keyboard.getModifiers();
-  kpress = false;
-  kc_mapped = ckey->mapkeycode(kc,mod);
+  kc_mapped = ckey.mapkeycode(kc);
   displayKey();
 
-  // handle special key functions
-  switch (kc_mapped) {
-    case IGNORE_KEYCODE:
-      break;
-    default:
-      ckey->c64key(kc_mapped, kpress, kc);
-      break;
-  }
+  // Always release the mapping saved on key-down.
+  ckey.setKey(kc_mapped, false, kc);
+}
+
+// Release outputs when USB disappears without key-up reports.
+void keyDisconnected() {
+  ckey.clearAllKeys();
 }
 
 //////////////////////////////////////////////////////////////
@@ -136,12 +141,10 @@ void displayKeyMap() {
    u8g2.setFlipMode(true);
    u8g2.setFont(u8g2_font_7x13B_tr);
    u8g2.setCursor(0,14);
-   String s;
-   s = "New keymap: " + String(keymapnum);
-   u8g2.print(s);
+   u8g2.print("New keymap: ");
+   u8g2.print(keymapnum);
    u8g2.setCursor(0,31);
-   s = ckey->getCurrentKeyMapName();
-   u8g2.print(s);
+   u8g2.print(ckey.getCurrentKeyMapName());
   } while ( u8g2.nextPage() );
 }
 
@@ -153,17 +156,21 @@ void displayKey() {
    u8g2.setFlipMode(true);
    u8g2.setFont(u8g2_font_7x13B_tr);
    u8g2.setCursor(0,14);
-   String s;
-   s = "Key: " + String(kc,HEX) + " Mod: " + String(mod, HEX);
-   u8g2.print(s);
+   u8g2.print("Key: ");
+   u8g2.print(kc, HEX);
+   u8g2.print(" Mod: ");
+   u8g2.print(mod, HEX);
    u8g2.setCursor(0,31);
-   s = "map:"+String(kc_mapped, HEX) + " " + String(get_mapped_key_name(kc_mapped));
-   u8g2.print(s);
+   u8g2.print("map:");
+   u8g2.print(kc_mapped, HEX);
+   u8g2.print(" ");
+   const char *name = get_mapped_key_name(kc_mapped);
+   u8g2.print(name ? name : "unknown");
   } while ( u8g2.nextPage() );
 }
 
 
-void displayState(const char* s) {
+void displayState(const char* s, bool showVersion) {
   if (!displayPresent) { return; }
   u8g2.firstPage();
   do {
@@ -171,13 +178,18 @@ void displayState(const char* s) {
    u8g2.setFont(u8g2_font_7x13B_tr);
    u8g2.setCursor(0,14);
    u8g2.print(s);
+   if (showVersion) {
+     u8g2.setCursor(0,31);
+     u8g2.print("FW ");
+     u8g2.print(firmwareVersion);
+   }
   } while ( u8g2.nextPage() );
 }
 
 //////////////////////////////////////////////////////////////
 
 void setup() {
-  ckey = new C16keyboard();
+  ckey.begin();
 
   Wire.begin();
 
@@ -191,9 +203,8 @@ void setup() {
 
   usb.Init();
 
-  displayState("Hello world!");
+  displayState("Hello world!", true);
 
-  ckey->clearAllKeys(); // just in case RESET line is not used
 }
 
 uint32_t lastUSBstate = 0;
@@ -211,7 +222,7 @@ void loop() {
   usb.Task();
 
   uint32_t currentUSBstate = usb.getUsbTaskState();
-  String state;
+  const char *state = "";
   if (lastUSBstate != currentUSBstate) {
     switch (currentUSBstate) {
       case USB_ATTACHED_SUBSTATE_SETTLE: state="Device Attached"; break;
@@ -221,7 +232,7 @@ void loop() {
       case USB_STATE_CONFIGURING: state="USB Configuring"; break;
       case USB_STATE_RUNNING: state="USB Running"; break;
     }
-    displayState(state.c_str());
+    displayState(state, true);
     lastUSBstate = currentUSBstate;
   }
 }
